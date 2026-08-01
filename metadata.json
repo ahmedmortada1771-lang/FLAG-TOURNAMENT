@@ -1,0 +1,6 @@
+{
+  "name": "Flag Tournament",
+  "description": "AAA HTML5 World Flag Quiz & Tournament game featuring national and territory flags with multiple game modes, dynamic difficulty, interactive 3D globe, audio synthesis, and achievements.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
