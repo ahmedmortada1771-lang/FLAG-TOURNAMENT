@@ -48,32 +48,16 @@ const wss = new WebSocketServer({ noServer: true });
 const roomsMap = new Map<string, OnlineRoom>();
 // Map of roomCode -> Set of WebSockets
 const roomSockets = new Map<string, Set<WebSocket>>();
-// In-memory Registered Players Store (exactName -> playerId)
-const registeredNames = new Map<string, string>();
 const PLAYER_NAME_REGEX = /^[a-zA-Z0-9]{3,12}$/;
 
 function isPlayerNameTaken(name: string, playerId: string): boolean {
   const trimmed = name.trim();
   if (!trimmed) return false;
 
-  // Case sensitive check: lowercase and uppercase names are treated as distinct/different
-  const existingPid = registeredNames.get(trimmed);
-  if (existingPid && existingPid !== playerId) {
-    let inActiveRoom = false;
-    for (const room of roomsMap.values()) {
-      if (room.players.some((p) => p.id === existingPid)) {
-        inActiveRoom = true;
-        break;
-      }
-    }
-    if (inActiveRoom) {
-      return true;
-    }
-  }
-
+  // Only check if another player with a different playerId in an active room is using this exact name
   for (const room of roomsMap.values()) {
     for (const player of room.players) {
-      if (player.name.trim() === trimmed && player.id !== playerId) {
+      if (player.name === trimmed && player.id !== playerId) {
         return true;
       }
     }
@@ -83,10 +67,7 @@ function isPlayerNameTaken(name: string, playerId: string): boolean {
 }
 
 function registerPlayerName(name: string, playerId: string): void {
-  const trimmed = name.trim();
-  if (trimmed) {
-    registeredNames.set(trimmed, playerId);
-  }
+  // No persistent server-wide lock needed; names are free to use
 }
 
 function generateRoomCode(): string {
