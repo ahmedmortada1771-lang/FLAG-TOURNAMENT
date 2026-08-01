@@ -34,19 +34,27 @@ export class OnlineService {
   private static pollTimer: any = null;
 
   public static async registerPlayerName(name: string, playerId: string): Promise<string> {
-    const res = await fetch('/api/players/register-name', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: name.trim(), playerId }),
-    });
+    try {
+      const res = await fetch('/api/players/register-name', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), playerId }),
+      });
 
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || 'Failed to register player name');
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'This name is already taken or unavailable, try another name');
+      }
+
+      const data = await res.json();
+      return data.name;
+    } catch (e: any) {
+      if (e.message && (e.message.includes('fetch') || e.message.includes('NetworkError') || e.message.includes('Failed to fetch'))) {
+        console.warn('Backend server offline or unreachable, registering name locally.');
+        return name.trim();
+      }
+      throw e;
     }
-
-    const data = await res.json();
-    return data.name;
   }
 
   public static async createRoom(

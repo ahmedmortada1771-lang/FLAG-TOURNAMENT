@@ -59,7 +59,16 @@ function isPlayerNameTaken(name: string, playerId: string): boolean {
   // Case sensitive check: lowercase and uppercase names are treated as distinct/different
   const existingPid = registeredNames.get(trimmed);
   if (existingPid && existingPid !== playerId) {
-    return true;
+    let inActiveRoom = false;
+    for (const room of roomsMap.values()) {
+      if (room.players.some((p) => p.id === existingPid)) {
+        inActiveRoom = true;
+        break;
+      }
+    }
+    if (inActiveRoom) {
+      return true;
+    }
   }
 
   for (const room of roomsMap.values()) {
