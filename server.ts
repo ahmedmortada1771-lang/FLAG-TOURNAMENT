@@ -48,21 +48,23 @@ const wss = new WebSocketServer({ noServer: true });
 const roomsMap = new Map<string, OnlineRoom>();
 // Map of roomCode -> Set of WebSockets
 const roomSockets = new Map<string, Set<WebSocket>>();
-// In-memory Registered Players Store (lowerName -> playerId)
+// In-memory Registered Players Store (exactName -> playerId)
 const registeredNames = new Map<string, string>();
+const PLAYER_NAME_REGEX = /^[a-zA-Z0-9]{3,12}$/;
 
 function isPlayerNameTaken(name: string, playerId: string): boolean {
-  const lower = name.trim().toLowerCase();
-  if (!lower) return false;
+  const trimmed = name.trim();
+  if (!trimmed) return false;
 
-  const existingPid = registeredNames.get(lower);
+  // Case sensitive check: lowercase and uppercase names are treated as distinct/different
+  const existingPid = registeredNames.get(trimmed);
   if (existingPid && existingPid !== playerId) {
     return true;
   }
 
   for (const room of roomsMap.values()) {
     for (const player of room.players) {
-      if (player.name.trim().toLowerCase() === lower && player.id !== playerId) {
+      if (player.name.trim() === trimmed && player.id !== playerId) {
         return true;
       }
     }
@@ -72,9 +74,9 @@ function isPlayerNameTaken(name: string, playerId: string): boolean {
 }
 
 function registerPlayerName(name: string, playerId: string): void {
-  const lower = name.trim().toLowerCase();
-  if (lower) {
-    registeredNames.set(lower, playerId);
+  const trimmed = name.trim();
+  if (trimmed) {
+    registeredNames.set(trimmed, playerId);
   }
 }
 
@@ -174,8 +176,8 @@ app.post("/api/players/register-name", (req, res) => {
   }
 
   const trimmedName = String(name).trim();
-  if (trimmedName.length < 3 || trimmedName.length > 12) {
-    return res.status(400).json({ error: "Player name must be between 3 and 12 characters" });
+  if (!PLAYER_NAME_REGEX.test(trimmedName)) {
+    return res.status(400).json({ error: "Player name must be 3-12 characters using only words (letters) and numbers. No spaces or symbols allowed." });
   }
 
   if (isPlayerNameTaken(trimmedName, String(playerId))) {
@@ -195,8 +197,8 @@ app.post("/api/rooms/create", (req, res) => {
   }
 
   const trimmedName = String(hostName).trim();
-  if (trimmedName.length < 3 || trimmedName.length > 12) {
-    return res.status(400).json({ error: "Player name must be between 3 and 12 characters" });
+  if (!PLAYER_NAME_REGEX.test(trimmedName)) {
+    return res.status(400).json({ error: "Player name must be 3-12 characters using only words (letters) and numbers. No spaces or symbols allowed." });
   }
 
   if (isPlayerNameTaken(trimmedName, String(hostId))) {
@@ -257,8 +259,8 @@ app.post("/api/rooms/join", (req, res) => {
   }
 
   const trimmedName = String(playerName).trim();
-  if (trimmedName.length < 3 || trimmedName.length > 12) {
-    return res.status(400).json({ error: "Player name must be between 3 and 12 characters" });
+  if (!PLAYER_NAME_REGEX.test(trimmedName)) {
+    return res.status(400).json({ error: "Player name must be 3-12 characters using only words (letters) and numbers. No spaces or symbols allowed." });
   }
 
   if (isPlayerNameTaken(trimmedName, String(playerId))) {

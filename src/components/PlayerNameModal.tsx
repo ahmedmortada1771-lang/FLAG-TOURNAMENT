@@ -24,14 +24,16 @@ export const PlayerNameModal: React.FC<Props> = ({
   const [loading, setLoading] = useState<boolean>(false);
 
   const trimmed = name.trim();
-  const isValidLength = StorageService.isValidPlayerName(trimmed);
+  const hasNonAlphaNumeric = /[^a-zA-Z0-9]/.test(trimmed);
+  const isValidLength = trimmed.length >= 3 && trimmed.length <= 12;
+  const isValidFormat = !hasNonAlphaNumeric && isValidLength;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched(true);
     setErrorMsg('');
 
-    if (!isValidLength) {
+    if (!isValidFormat) {
       soundEngine.playWrong();
       return;
     }
@@ -99,18 +101,18 @@ export const PlayerNameModal: React.FC<Props> = ({
                   setTouched(true);
                   if (errorMsg) setErrorMsg('');
                 }}
-                maxLength={16}
-                placeholder="e.g. FlagMaster"
+                maxLength={12}
+                placeholder="e.g. FlagMaster1"
                 autoFocus
                 disabled={loading}
                 className={`w-full px-4 py-3.5 rounded-2xl bg-slate-950 border text-white placeholder-slate-600 focus:outline-none transition-all font-medium text-base shadow-inner ${
-                  (touched && !isValidLength) || errorMsg
+                  (touched && !isValidFormat) || errorMsg
                     ? 'border-rose-500 focus:ring-2 focus:ring-rose-500/50'
                     : 'border-slate-800 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/30'
                 }`}
               />
 
-              {trimmed.length > 0 && isValidLength && !errorMsg && (
+              {trimmed.length > 0 && isValidFormat && !errorMsg && (
                 <Check className="w-5 h-5 text-emerald-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
               )}
             </div>
@@ -125,22 +127,34 @@ export const PlayerNameModal: React.FC<Props> = ({
                 <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
                 <span>{errorMsg}</span>
               </motion.div>
+            ) : touched && hasNonAlphaNumeric ? (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-1.5 mt-2.5 text-xs text-rose-400 font-medium bg-rose-500/10 p-2.5 rounded-xl border border-rose-500/30"
+              >
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                <span>No spaces or symbols allowed. Only letters and numbers are accepted.</span>
+              </motion.div>
             ) : touched && !isValidLength ? (
               <motion.div
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-1.5 mt-2.5 text-xs text-rose-400 font-medium"
+                className="flex items-center gap-1.5 mt-2.5 text-xs text-rose-400 font-medium bg-rose-500/10 p-2.5 rounded-xl border border-rose-500/30"
               >
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>
-                  Name must be <strong>between 3 and 12 characters</strong> long.
-                </span>
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                <span>Name must be between 3 and 12 characters long.</span>
               </motion.div>
             ) : null}
 
-            <p className="text-[11px] text-slate-500 mt-2">
-              Allowed: 3 to 12 characters. Your name will be saved locally.
-            </p>
+            <div className="mt-3 p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 text-[11px] text-slate-400 space-y-1">
+              <div className="font-semibold text-cyan-400 flex items-center gap-1">
+                <span>📌 Note for Name Creation:</span>
+              </div>
+              <p>• Only words (letters A-Z, a-z) and numbers (0-9) allowed.</p>
+              <p>• No spaces or special symbols.</p>
+              <p>• Capital and lowercase letters are treated as different names (e.g., <code className="text-amber-300">Alex</code>, <code className="text-amber-300">alex</code>, and <code className="text-amber-300">ALEX</code> are distinct).</p>
+            </div>
           </div>
 
           <div className="flex items-center gap-3 pt-2">
@@ -159,9 +173,9 @@ export const PlayerNameModal: React.FC<Props> = ({
 
             <button
               type="submit"
-              disabled={!isValidLength || loading}
+              disabled={!isValidFormat || loading}
               className={`w-full py-3.5 rounded-2xl font-black text-sm transition-all shadow-lg flex items-center justify-center gap-2 ${
-                isValidLength && !loading
+                isValidFormat && !loading
                   ? 'bg-gradient-to-r from-cyan-500 via-blue-500 to-fuchsia-500 text-slate-950 hover:brightness-110 shadow-cyan-500/25'
                   : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/50'
               }`}

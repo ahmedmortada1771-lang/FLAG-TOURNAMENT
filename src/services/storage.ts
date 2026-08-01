@@ -62,8 +62,9 @@ export function getLocalDateString(): string {
 
 export class StorageService {
   public static isValidPlayerName(name: string): boolean {
-    const trimmed = name ? name.trim() : '';
-    return trimmed.length >= 3 && trimmed.length <= 12;
+    if (!name) return false;
+    const trimmed = name.trim();
+    return /^[a-zA-Z0-9]{3,12}$/.test(trimmed);
   }
 
   public static getPlayerName(): string {
