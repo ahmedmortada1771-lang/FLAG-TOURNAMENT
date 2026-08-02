@@ -89,7 +89,7 @@ export const GameScreen: React.FC<Props> = ({ questions, gameMode, onFinishGame,
   const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([]);
 
   // 3-2-1 GO Countdown Overlay State
-  const [countdownText, setCountdownText] = useState<string | null>(null);
+  const [countdownText, setCountdownText] = useState<string | null>('3');
 
   // Feedback FX
   const [shake, setShake] = useState(false);
@@ -100,13 +100,45 @@ export const GameScreen: React.FC<Props> = ({ questions, gameMode, onFinishGame,
 
   const currentQuestion = questions[currentIndex];
 
+  // 3-2-1 GO Countdown Animation Effect on Game Start
+  useEffect(() => {
+    setCountdownText('3');
+    soundEngine.playTick();
+
+    const t1 = setTimeout(() => {
+      setCountdownText('2');
+      soundEngine.playTick();
+    }, 750);
+
+    const t2 = setTimeout(() => {
+      setCountdownText('1');
+      soundEngine.playTick();
+    }, 1500);
+
+    const t3 = setTimeout(() => {
+      setCountdownText('GO!');
+      soundEngine.playClick();
+    }, 2250);
+
+    const t4 = setTimeout(() => {
+      setCountdownText(null);
+      setQuestionStartTime(Date.now());
+    }, 3000);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+    };
+  }, []);
+
   // Initialize or reset question timing
   useEffect(() => {
     setQuestionStartTime(Date.now());
     setSelectedIndex(null);
     setIsAnswered(false);
     setShowGlow(null);
-    setCountdownText(null);
   }, [currentIndex]);
 
   // Handle Time Attack Mode 30s countdown

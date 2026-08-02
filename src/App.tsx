@@ -275,7 +275,14 @@ export default function App() {
       {screen === 'online_lobby' && (
         <OnlineLobbyScreen
           playerName={playerName}
-          onBackToHome={() => setScreen('home')}
+          initialRoom={activeOnlineRoom}
+          onBackToHome={() => {
+            setActiveOnlineRoom(null);
+            setScreen('home');
+          }}
+          onLeaveRoom={() => {
+            setActiveOnlineRoom(null);
+          }}
           onStartMatch={(room) => {
             setActiveOnlineRoom(room);
             setScreen('online_game');
@@ -288,8 +295,13 @@ export default function App() {
         <OnlineGameScreen
           room={activeOnlineRoom}
           playerName={playerName}
-          onBackToLobby={() => setScreen('online_lobby')}
-          onBackToHome={() => setScreen('home')}
+          onBackToLobby={() => {
+            setScreen('online_lobby');
+          }}
+          onBackToHome={() => {
+            setActiveOnlineRoom(null);
+            setScreen('home');
+          }}
         />
       )}
 

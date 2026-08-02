@@ -106,22 +106,22 @@ export const OnlineGameScreen: React.FC<Props> = ({
     const t1 = setTimeout(() => {
       setCountdownText('2');
       soundEngine.playTick();
-    }, 350);
+    }, 750);
 
     const t2 = setTimeout(() => {
       setCountdownText('1');
       soundEngine.playTick();
-    }, 700);
+    }, 1500);
 
     const t3 = setTimeout(() => {
       setCountdownText('GO!');
       soundEngine.playClick();
-    }, 1050);
+    }, 2250);
 
     const t4 = setTimeout(() => {
       setCountdownText(null);
       questionStartTimeRef.current = Date.now();
-    }, 1400);
+    }, 3000);
 
     return () => {
       clearTimeout(t1);

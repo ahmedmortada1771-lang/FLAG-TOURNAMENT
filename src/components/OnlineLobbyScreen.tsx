@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Users, PlusCircle, LogIn, Copy, Check, ArrowLeft, Play, Globe, Shield, Sparkles, AlertCircle, Crown, UserCheck, Trophy, Zap, Clock } from 'lucide-react';
 import { Continent, GameMode } from '../types';
@@ -9,8 +9,10 @@ import { ContinentIcon } from './ContinentIcons';
 
 interface Props {
   playerName: string;
+  initialRoom?: OnlineRoom | null;
   onBackToHome: () => void;
   onStartMatch: (room: OnlineRoom) => void;
+  onLeaveRoom?: () => void;
   onChangeNameClick: () => void;
 }
 
@@ -33,11 +35,16 @@ const ONLINE_GAME_MODES: { id: GameMode; name: string; icon: React.ReactNode; co
 
 export const OnlineLobbyScreen: React.FC<Props> = ({
   playerName,
+  initialRoom,
   onBackToHome,
   onStartMatch,
+  onLeaveRoom,
   onChangeNameClick,
 }) => {
-  const [viewState, setViewState] = useState<'menu' | 'create' | 'join' | 'in_room'>('menu');
+  const [currentRoom, setCurrentRoom] = useState<OnlineRoom | null>(initialRoom || null);
+  const [viewState, setViewState] = useState<'menu' | 'create' | 'join' | 'in_room'>(
+    initialRoom ? 'in_room' : 'menu'
+  );
   const [selectedContinent, setSelectedContinent] = useState<Continent>('All');
   const [selectedGameMode, setSelectedGameMode] = useState<GameMode>('classic');
   const [questionCount, setQuestionCount] = useState<number>(20);
@@ -46,21 +53,37 @@ export const OnlineLobbyScreen: React.FC<Props> = ({
   const [joinCodeInput, setJoinCodeInput] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-
-  // Active Room State
-  const [currentRoom, setCurrentRoom] = useState<OnlineRoom | null>(null);
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
 
   const playerId = StorageService.getPlayerId();
+  const prevStatusRef = useRef<string | undefined>(currentRoom?.status);
+
+  // Sync initialRoom when prop updates or on return
+  useEffect(() => {
+    if (initialRoom) {
+      setCurrentRoom(initialRoom);
+      setViewState('in_room');
+      prevStatusRef.current = initialRoom.status;
+    }
+  }, [initialRoom]);
 
   // Room State Subscription
   useEffect(() => {
     if (!currentRoom) return;
 
     const unsubscribe = OnlineService.subscribeToRoomUpdates(currentRoom.code, (updatedRoom) => {
+      const prevStatus = prevStatusRef.current;
+      prevStatusRef.current = updatedRoom.status;
+
       setCurrentRoom(updatedRoom);
+
       if (updatedRoom.status === 'playing') {
-        onStartMatch(updatedRoom);
+        const wasInLobbyOrFinished = prevStatus === 'lobby' || prevStatus === 'finished';
+        const isFreshMatch = updatedRoom.players.length > 0 && updatedRoom.players.every((p) => !p.finished);
+
+        if (wasInLobbyOrFinished || isFreshMatch) {
+          onStartMatch(updatedRoom);
+        }
       }
     });
 
@@ -153,6 +176,9 @@ export const OnlineLobbyScreen: React.FC<Props> = ({
       soundEngine.playClick();
       await OnlineService.leaveRoom(currentRoom.code, playerId);
       setCurrentRoom(null);
+    }
+    if (onLeaveRoom) {
+      onLeaveRoom();
     }
     setViewState('menu');
   };
