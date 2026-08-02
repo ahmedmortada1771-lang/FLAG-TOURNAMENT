@@ -50,14 +50,24 @@ const roomsMap = new Map<string, OnlineRoom>();
 const roomSockets = new Map<string, Set<WebSocket>>();
 const PLAYER_NAME_REGEX = /^[a-zA-Z0-9]{3,12}$/;
 
+// Map of registered profiles: playerId -> profileName
+const registeredProfiles = new Map<string, string>();
+
 function isPlayerNameTaken(name: string, playerId: string): boolean {
   const trimmed = name.trim().toLowerCase();
   if (!trimmed) return false;
 
-  // Only check if another player with a different playerId in an active room is using this exact name
+  // 1. Check if another player with a different playerId has registered this profile name
+  for (const [pid, profName] of registeredProfiles.entries()) {
+    if (pid !== playerId && profName.trim().toLowerCase() === trimmed) {
+      return true;
+    }
+  }
+
+  // 2. Check if another player with a different playerId in an active room is using this name
   for (const room of roomsMap.values()) {
     for (const player of room.players) {
-      if (player.name.trim().toLowerCase() === trimmed && player.id !== playerId) {
+      if (player.id !== playerId && player.name.trim().toLowerCase() === trimmed) {
         return true;
       }
     }
@@ -67,7 +77,10 @@ function isPlayerNameTaken(name: string, playerId: string): boolean {
 }
 
 function registerPlayerName(name: string, playerId: string): void {
-  // No persistent server-wide lock needed; names are free to use
+  const trimmed = name.trim();
+  if (trimmed && playerId) {
+    registeredProfiles.set(playerId, trimmed);
+  }
 }
 
 function generateRoomCode(): string {
