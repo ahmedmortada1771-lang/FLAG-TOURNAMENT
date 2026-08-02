@@ -51,13 +51,13 @@ const roomSockets = new Map<string, Set<WebSocket>>();
 const PLAYER_NAME_REGEX = /^[a-zA-Z0-9]{3,12}$/;
 
 function isPlayerNameTaken(name: string, playerId: string): boolean {
-  const trimmed = name.trim();
+  const trimmed = name.trim().toLowerCase();
   if (!trimmed) return false;
 
   // Only check if another player with a different playerId in an active room is using this exact name
   for (const room of roomsMap.values()) {
     for (const player of room.players) {
-      if (player.name === trimmed && player.id !== playerId) {
+      if (player.name.trim().toLowerCase() === trimmed && player.id !== playerId) {
         return true;
       }
     }
@@ -289,6 +289,36 @@ app.get("/api/rooms/:code", (req, res) => {
     return res.status(404).json({ error: "Room not found" });
   }
   res.json({ room });
+});
+
+// Update Room Settings (Host Only)
+app.post("/api/rooms/:code/update-settings", (req, res) => {
+  const { playerId, continent, gameMode, questionCount } = req.body;
+  const room = roomsMap.get(req.params.code);
+
+  if (!room) {
+    return res.status(404).json({ error: "Room not found" });
+  }
+
+  if (room.hostId !== playerId) {
+    return res.status(403).json({ error: "Only the host can edit room settings" });
+  }
+
+  if (room.status !== "lobby") {
+    return res.status(400).json({ error: "Cannot change settings after match has started" });
+  }
+
+  if (continent !== undefined) room.continent = continent;
+  if (gameMode !== undefined) room.gameMode = gameMode;
+  if (questionCount !== undefined) room.questionCount = questionCount;
+
+  // Regenerate questions for the updated room settings
+  const questions = generateQuestionsForRoom(room.continent, room.questionCount, room.gameMode);
+  room.questions = questions;
+  room.questionCount = questions.length;
+
+  broadcastRoomUpdate(room.code);
+  res.json({ success: true, room });
 });
 
 // Start Game in Room

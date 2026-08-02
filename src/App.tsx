@@ -85,6 +85,20 @@ export default function App() {
     soundEngine.setMusicVolume(settings.musicVolume ?? 0.4);
   }, [settings]);
 
+  // Handle background music: turn off during gameplay, turn on everywhere else (in room, lobby, home, etc.)
+  useEffect(() => {
+    const isPlaying = screen === 'game' || screen === 'online_game';
+    if (isPlaying) {
+      soundEngine.stopMusic();
+    } else {
+      if (settings.musicEnabled) {
+        soundEngine.startMusic();
+      } else {
+        soundEngine.stopMusic();
+      }
+    }
+  }, [screen, settings.musicEnabled]);
+
   // Handle Continent Selection -> Go to Difficulty
   const handleSelectContinent = (continent: Continent) => {
     setSelectedContinent(continent);

@@ -81,6 +81,9 @@ export const OnlineGameScreen: React.FC<Props> = ({
   const [showFeedback, setShowFeedback] = useState<boolean>(false);
   const [finished, setFinished] = useState<boolean>(false);
 
+  // 3-2-1 Countdown Animation State
+  const [countdownText, setCountdownText] = useState<string | null>('3');
+
   // Mode Specific States
   const [lives, setLives] = useState<number>(3); // Survival Mode Hearts
   const [timeLeft, setTimeLeft] = useState<number>(30); // Time Attack Countdown
@@ -95,6 +98,39 @@ export const OnlineGameScreen: React.FC<Props> = ({
   const startTimeRef = useRef<number>(Date.now());
   const questionStartTimeRef = useRef<number>(Date.now());
 
+  // 3-2-1 GO Countdown Animation Effect on Game Start
+  useEffect(() => {
+    setCountdownText('3');
+    soundEngine.playTick();
+
+    const t1 = setTimeout(() => {
+      setCountdownText('2');
+      soundEngine.playTick();
+    }, 350);
+
+    const t2 = setTimeout(() => {
+      setCountdownText('1');
+      soundEngine.playTick();
+    }, 700);
+
+    const t3 = setTimeout(() => {
+      setCountdownText('GO!');
+      soundEngine.playClick();
+    }, 1050);
+
+    const t4 = setTimeout(() => {
+      setCountdownText(null);
+      questionStartTimeRef.current = Date.now();
+    }, 1400);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+    };
+  }, []);
+
   // Subscribe to Room updates
   useEffect(() => {
     const unsubscribe = OnlineService.subscribeToRoomUpdates(initialRoom.code, (updatedRoom) => {
@@ -106,7 +142,7 @@ export const OnlineGameScreen: React.FC<Props> = ({
   // Handle Time Attack 30s Countdown Timer
   useEffect(() => {
     const isTimeAttack = room.gameMode === 'timeattack' || room.gameMode === 'time_attack';
-    if (!isTimeAttack || finished || showFeedback) return;
+    if (!isTimeAttack || finished || showFeedback || countdownText !== null) return;
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
@@ -131,7 +167,7 @@ export const OnlineGameScreen: React.FC<Props> = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [room.gameMode, finished, showFeedback, room.code, playerId, currentQuestionIdx, score, totalCorrect]);
+  }, [room.gameMode, finished, showFeedback, room.code, playerId, currentQuestionIdx, score, totalCorrect, countdownText]);
 
   // Trigger confetti if current player is the winner when game ends
   useEffect(() => {
@@ -589,6 +625,34 @@ export const OnlineGameScreen: React.FC<Props> = ({
           </footer>
         </>
       )}
+
+      {/* 3-2-1 GO Countdown Overlay */}
+      <AnimatePresence>
+        {countdownText && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center pointer-events-none"
+          >
+            <div className="text-center">
+              <motion.span
+                key={countdownText}
+                initial={{ scale: 0.3, opacity: 0 }}
+                animate={{ scale: 1.25, opacity: 1 }}
+                exit={{ scale: 2, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="text-7xl sm:text-9xl font-black font-mono tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-amber-300 drop-shadow-[0_0_35px_rgba(6,182,212,0.8)] block"
+              >
+                {countdownText}
+              </motion.span>
+              <span className="text-xs sm:text-sm font-bold font-mono tracking-widest text-cyan-300 uppercase mt-4 block">
+                Get Ready!
+              </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

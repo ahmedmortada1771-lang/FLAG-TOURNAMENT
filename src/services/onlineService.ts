@@ -80,6 +80,27 @@ export class OnlineService {
     return data;
   }
 
+  public static async updateRoomSettings(
+    code: string,
+    playerId: string,
+    settings: { continent?: Continent; gameMode?: GameMode; questionCount?: number }
+  ): Promise<OnlineRoom> {
+    const res = await fetch(`/api/rooms/${code}/update-settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ playerId, ...settings }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Failed to update room settings');
+    }
+
+    const data = await res.json();
+    if (bc) bc.postMessage({ type: 'ROOM_UPDATE', roomCode: code.trim() });
+    return data.room;
+  }
+
   public static async joinRoom(
     code: string,
     playerId: string,

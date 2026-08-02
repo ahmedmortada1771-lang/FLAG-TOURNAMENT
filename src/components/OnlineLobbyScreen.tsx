@@ -157,6 +157,18 @@ export const OnlineLobbyScreen: React.FC<Props> = ({
     setViewState('menu');
   };
 
+  const handleUpdateRoomSettings = async (newSettings: { continent?: Continent; gameMode?: GameMode; questionCount?: number }) => {
+    if (!currentRoom || currentRoom.hostId !== playerId) return;
+    try {
+      soundEngine.playClick();
+      const updated = await OnlineService.updateRoomSettings(currentRoom.code, playerId, newSettings);
+      setCurrentRoom(updated);
+    } catch (err: any) {
+      soundEngine.playWrong();
+      setErrorMsg(err.message || 'Failed to update room settings');
+    }
+  };
+
   const isHost = currentRoom?.hostId === playerId;
   const canStartGame = isHost && (currentRoom?.players.length || 0) >= 2;
 
@@ -590,7 +602,9 @@ export const OnlineLobbyScreen: React.FC<Props> = ({
                   <div className="w-[1px] h-6 bg-slate-800" />
                   <div>
                     <p className="text-slate-400">QUESTIONS</p>
-                    <p className="font-bold text-white">{currentRoom.questionCount} Flags</p>
+                    <p className="font-bold text-white">
+                      {(currentRoom.gameMode === 'timeattack' || currentRoom.gameMode === 'survival') ? 'Infinity ∞' : `${currentRoom.questionCount} Flags`}
+                    </p>
                   </div>
                   <div className="w-[1px] h-6 bg-slate-800" />
                   <div>
@@ -599,6 +613,132 @@ export const OnlineLobbyScreen: React.FC<Props> = ({
                       {currentRoom.players.length} / {currentRoom.maxPlayers}
                     </p>
                   </div>
+                </div>
+              </div>
+
+              {/* In-Room Gameplay Controls Panel (Host Edit / Player View) */}
+              <div className="p-5 sm:p-6 rounded-3xl bg-slate-900/90 border border-slate-800 backdrop-blur-2xl shadow-2xl space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Crown className="w-5 h-5 text-amber-400" />
+                    <h3 className="text-sm font-bold text-white font-mono uppercase tracking-wide">
+                      {isHost ? 'Host Controls: Edit Room Settings' : 'Room Match Settings'}
+                    </h3>
+                  </div>
+                  {isHost ? (
+                    <span className="px-2.5 py-1 rounded-xl bg-amber-950/80 border border-amber-500/40 text-[11px] font-mono text-amber-300 font-bold flex items-center gap-1">
+                      <Crown className="w-3.5 h-3.5 text-amber-400" /> You are Host
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-1 rounded-xl bg-slate-800 text-[11px] font-mono text-slate-400">
+                      Host Controls Settings
+                    </span>
+                  )}
+                </div>
+
+                {/* Game Mode Picker */}
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold uppercase font-mono text-slate-400 block">
+                    Game Mode {isHost && '(Click to change mode)'}
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {ONLINE_GAME_MODES.map((m) => {
+                      const isSelected = (currentRoom.gameMode || 'classic') === m.id;
+                      return (
+                        <button
+                          key={m.id}
+                          disabled={!isHost}
+                          onClick={() => handleUpdateRoomSettings({ gameMode: m.id })}
+                          className={`p-3 rounded-2xl border text-left text-xs font-bold transition-all flex flex-col justify-between ${
+                            isSelected
+                              ? 'bg-slate-950 border-cyan-400 text-cyan-300 ring-1 ring-cyan-400/50 shadow-md'
+                              : isHost
+                              ? 'bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                              : 'bg-slate-950/40 border-slate-800/60 text-slate-500 opacity-60 cursor-default'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between w-full mb-1">
+                            <span className="truncate">{m.name}</span>
+                            {isSelected && <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0" />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Continent / World Picker */}
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold uppercase font-mono text-slate-400 block">
+                    Continent / Region {isHost && '(Click to change continent/world)'}
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5">
+                    {CONTINENTS.map((c) => {
+                      const isSelected = currentRoom.continent === c.name;
+                      return (
+                        <button
+                          key={c.name}
+                          disabled={!isHost}
+                          onClick={() => handleUpdateRoomSettings({ continent: c.name })}
+                          className={`p-2 rounded-xl border text-center text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 ${
+                            isSelected
+                              ? 'bg-cyan-950 border-cyan-400 text-cyan-300 shadow-md ring-1 ring-cyan-400/50'
+                              : isHost
+                              ? 'bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                              : 'bg-slate-950/40 border-slate-800/60 text-slate-500 opacity-60 cursor-default'
+                          }`}
+                        >
+                          <ContinentIcon continent={c.name} className="w-4 h-4 shrink-0" />
+                          <span className="truncate">{c.name === 'All' ? 'World' : c.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Question Count Picker */}
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold uppercase font-mono text-slate-400 block">
+                    Question Count
+                  </label>
+                  {currentRoom.gameMode === 'classic' || currentRoom.gameMode === 'tournament' ? (
+                    <div className="grid grid-cols-3 gap-2">
+                      {[10, 15, 20].map((count) => {
+                        const isSelected = currentRoom.questionCount === count;
+                        return (
+                          <button
+                            key={count}
+                            disabled={!isHost}
+                            onClick={() => handleUpdateRoomSettings({ questionCount: count })}
+                            className={`py-2.5 rounded-xl border text-center text-xs font-mono font-bold transition-all ${
+                              isSelected
+                                ? 'bg-fuchsia-950 border-fuchsia-400 text-fuchsia-300 shadow-md ring-1 ring-fuchsia-400/50'
+                                : isHost
+                                ? 'bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                                : 'bg-slate-950/40 border-slate-800/60 text-slate-500 opacity-60 cursor-default'
+                            }`}
+                          >
+                            {count} Flags
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 text-xs font-mono flex items-center gap-2">
+                      {currentRoom.gameMode === 'timeattack' && (
+                        <>
+                          <Clock className="w-4 h-4 text-fuchsia-400 shrink-0" />
+                          <span className="text-fuchsia-300 font-bold">Infinite Flags • 30s Countdown (+1s Bonus / Correct Answer)</span>
+                        </>
+                      )}
+                      {currentRoom.gameMode === 'survival' && (
+                        <>
+                          <Shield className="w-4 h-4 text-emerald-400 shrink-0" />
+                          <span className="text-emerald-300 font-bold">Infinite Non-Repeating Flags • 3 Hearts System</span>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
