@@ -110,19 +110,15 @@ function generateQuestionsForRoom(continent: string, count: number = 20, gameMod
     }
   }
 
-  // If timeattack or survival, generate larger question pool
+  // Determine actual question count (NEVER repeat flags; max questions is pool.length)
   const isInfiniteMode = gameMode === "timeattack" || gameMode === "survival";
-  const actualCount = isInfiniteMode ? Math.max(100, pool.length) : count;
+  const actualCount = isInfiniteMode ? pool.length : Math.min(count, pool.length);
 
   let targets: any[] = [];
   if (gameMode === "tournament") {
-    // Sort by difficulty ascending so questions get progressively harder, then cycle/shuffle if needed
+    // Sort by difficulty ascending so questions get progressively harder, sliced strictly without repeats
     const sorted = [...pool].sort((a, b) => a.difficulty - b.difficulty);
     targets = sorted.slice(0, Math.min(actualCount, sorted.length));
-    if (targets.length < actualCount) {
-      const extra = shuffle(pool).slice(0, actualCount - targets.length);
-      targets = [...targets, ...extra];
-    }
   } else {
     const shuffledPool = shuffle(pool);
     targets = shuffledPool.slice(0, Math.min(actualCount, shuffledPool.length));
@@ -136,6 +132,13 @@ function generateQuestionsForRoom(continent: string, count: number = 20, gameMod
       );
     } else {
       distractorPool = FIFA_COUNTRIES.filter((c) => c.id !== target.id);
+    }
+
+    if (distractorPool.length < 3) {
+      const extra = FIFA_COUNTRIES.filter(
+        (c) => c.id !== target.id && !distractorPool.some((dp) => dp.id === c.id)
+      );
+      distractorPool = [...distractorPool, ...extra];
     }
 
     const chosenDistractors = shuffle(distractorPool).slice(0, 3);

@@ -174,6 +174,13 @@ export default function App() {
           distractorPool = FIFA_COUNTRIES.filter((c) => c.id !== target.id);
         }
 
+        if (distractorPool.length < 3) {
+          const extra = FIFA_COUNTRIES.filter(
+            (c) => c.id !== target.id && !distractorPool.some((dp) => dp.id === c.id)
+          );
+          distractorPool = [...distractorPool, ...extra];
+        }
+
         const chosenDistractors = shuffle(distractorPool).slice(0, 3);
         const choices = shuffle([target, ...chosenDistractors]);
         const correctIndex = choices.findIndex((c) => c.id === target.id);
@@ -311,6 +318,7 @@ export default function App() {
           maxStreak={maxStreak}
           bestDifficulty={bestDifficulty}
           gameMode={selectedGameMode}
+          continent={selectedContinent}
           newlyUnlocked={newlyUnlocked}
           onPlayAgain={() => generateQuestions('all')}
           onGoHome={() => setScreen('home')}

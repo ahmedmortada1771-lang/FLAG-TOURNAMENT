@@ -257,8 +257,8 @@ export const GameScreen: React.FC<Props> = ({ questions, gameMode, onFinishGame,
           ? (nextQuestionIdx === -1 || askedIndices.size >= maxTournamentQuestions)
           : (currentIndex + 1 >= questions.length);
 
-        if (isLastQuestion && gameMode !== 'survival') {
-          // Non-survival game completed!
+        if (isLastQuestion) {
+          // Game completed (all unique flags for this mode/continent completed!)
           soundEngine.playVictory();
           onFinishGame(
             updatedAnswers,

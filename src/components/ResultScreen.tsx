@@ -11,6 +11,7 @@ interface Props {
   maxStreak: number;
   bestDifficulty: number;
   gameMode: GameMode;
+  continent?: string;
   newlyUnlocked: Achievement[];
   onPlayAgain: () => void;
   onGoHome: () => void;
@@ -22,6 +23,7 @@ export const ResultScreen: React.FC<Props> = ({
   maxStreak,
   bestDifficulty,
   gameMode,
+  continent,
   newlyUnlocked,
   onPlayAgain,
   onGoHome,
@@ -71,8 +73,15 @@ export const ResultScreen: React.FC<Props> = ({
           </div>
 
           <h1 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-amber-300">
-            TOURNAMENT RESULTS
+            MATCH RESULTS
           </h1>
+
+          <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs sm:text-sm font-bold shadow-lg">
+            <Award className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>
+              You completed all flags in {continent === 'All' || !continent ? 'the World' : continent}! No repeating flags.
+            </span>
+          </div>
         </motion.div>
       </header>
 

@@ -4,7 +4,7 @@ import confetti from 'canvas-confetti';
 import { OnlineRoom, OnlineService } from '../services/onlineService';
 import { StorageService } from '../services/storage';
 import { soundEngine } from '../services/audio';
-import { Trophy, Check, X, Clock, Users, Zap, Home, Heart, Shield } from 'lucide-react';
+import { Trophy, Check, X, Clock, Users, Zap, Home, Heart, Shield, Award } from 'lucide-react';
 
 interface Props {
   room: OnlineRoom;
@@ -319,6 +319,14 @@ export const OnlineGameScreen: React.FC<Props> = ({
             <p className="text-sm text-slate-300">
               Room Code: <strong className="font-mono text-cyan-300">{room.code}</strong> • {room.players.length} Players
             </p>
+            <div className="pt-1">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs sm:text-sm font-bold shadow-lg">
+                <Award className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>
+                  You completed all flags in {room.continent === 'All' || !room.continent ? 'the World' : room.continent}!
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Top 3 Podium Cards */}
