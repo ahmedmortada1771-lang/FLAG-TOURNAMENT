@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Continent, GameMode } from '../types';
 import { soundEngine } from '../services/audio';
 import { getLocalDateString } from '../services/storage';
-import { Trophy, Zap, Shield, Calendar, Play, Settings, BarChart2, Volume2, VolumeX, Music, Sparkles, Star, Lock, Clock, Users, User } from 'lucide-react';
+import { Trophy, Zap, Shield, Calendar, Play, Settings, BarChart2, Volume2, VolumeX, Music, Sparkles, Star, Lock, Clock, Users, User, Info } from 'lucide-react';
 import { ContinentIcon } from './ContinentIcons';
 import { InteractiveGlobe } from './InteractiveGlobe';
 
@@ -13,6 +13,7 @@ interface Props {
   selectedMode: GameMode;
   onOpenStats: () => void;
   onOpenSettings: () => void;
+  onOpenAbout: () => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
   musicEnabled: boolean;
@@ -50,6 +51,7 @@ export const HomeScreen: React.FC<Props> = ({
   selectedMode,
   onOpenStats,
   onOpenSettings,
+  onOpenAbout,
   soundEnabled,
   onToggleSound,
   musicEnabled,
@@ -213,6 +215,19 @@ export const HomeScreen: React.FC<Props> = ({
             id="settings-btn"
           >
             <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+
+          {/* About Game Button */}
+          <button
+            onClick={() => {
+              soundEngine.playClick();
+              onOpenAbout();
+            }}
+            className="p-2 sm:p-3 rounded-xl bg-slate-900/60 backdrop-blur-md border border-slate-800 hover:border-cyan-500/50 hover:bg-slate-800/80 transition-all text-slate-300 hover:text-cyan-400 shadow-lg"
+            title="About Flag Tournament"
+            id="about-btn"
+          >
+            <Info className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
       </header>
@@ -406,8 +421,18 @@ export const HomeScreen: React.FC<Props> = ({
       </AnimatePresence>
 
       {/* Footer Info */}
-      <footer className="text-center py-4 text-xs text-slate-500 font-mono">
-        <p>World Flags & Territories • Global Flag Quiz</p>
+      <footer className="text-center py-6 text-xs text-slate-500 font-mono flex flex-col items-center justify-center gap-2">
+        <p>World Flags &amp; Territories • Global Flag Quiz</p>
+        <button
+          onClick={() => {
+            soundEngine.playClick();
+            onOpenAbout();
+          }}
+          className="text-cyan-400 hover:text-cyan-300 underline underline-offset-4 font-bold transition-colors"
+          id="footer-about-btn"
+        >
+          About Flag Tournament
+        </button>
       </footer>
 
       {/* Mobile Bottom Navigation Bar (Visible only on mobile devices) */}
@@ -438,6 +463,19 @@ export const HomeScreen: React.FC<Props> = ({
           <span className="text-[10px] font-mono font-bold">Stats</span>
         </button>
 
+        {/* About Button */}
+        <button
+          onClick={() => {
+            soundEngine.playClick();
+            onOpenAbout();
+          }}
+          className="flex flex-col items-center gap-1 p-1 text-slate-400 hover:text-cyan-400 transition-colors"
+          id="mobile-bottom-about-btn"
+        >
+          <Info className="w-5 h-5" />
+          <span className="text-[10px] font-mono font-bold">About</span>
+        </button>
+
         {/* Settings Button */}
         <button
           onClick={() => {
@@ -449,19 +487,6 @@ export const HomeScreen: React.FC<Props> = ({
         >
           <Settings className="w-5 h-5" />
           <span className="text-[10px] font-mono font-bold">Settings</span>
-        </button>
-
-        {/* Sound Toggle Button */}
-        <button
-          onClick={() => {
-            soundEngine.playClick();
-            onToggleSound();
-          }}
-          className="flex flex-col items-center gap-1 p-1 text-slate-400 hover:text-cyan-400 transition-colors"
-          id="mobile-bottom-sound-btn"
-        >
-          {soundEnabled ? <Volume2 className="w-5 h-5 text-cyan-400" /> : <VolumeX className="w-5 h-5 text-rose-400" />}
-          <span className="text-[10px] font-mono font-bold">{soundEnabled ? 'Audio On' : 'Muted'}</span>
         </button>
       </nav>
     </div>

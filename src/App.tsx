@@ -15,8 +15,9 @@ import { SettingsModal } from './components/SettingsModal';
 import { PlayerNameModal } from './components/PlayerNameModal';
 import { OnlineLobbyScreen } from './components/OnlineLobbyScreen';
 import { OnlineGameScreen } from './components/OnlineGameScreen';
+import { AboutScreen } from './components/AboutScreen';
 
-type ScreenState = 'home' | 'difficulty' | 'game' | 'result' | 'online_lobby' | 'online_game';
+type ScreenState = 'home' | 'difficulty' | 'game' | 'result' | 'online_lobby' | 'online_game' | 'about';
 
 // Seeded PRNG for Daily Challenge
 function mulberry32(a: number) {
@@ -53,6 +54,37 @@ export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settings, setSettings] = useState<GameSettings>(StorageService.getSettings());
   const [stats, setStats] = useState<UserStats>(StorageService.getStats());
+
+  // Sync URL route /about vs /
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (window.location.pathname === '/about') {
+        setScreen('about');
+      }
+
+      const handlePopState = () => {
+        if (window.location.pathname === '/about') {
+          setScreen('about');
+        } else {
+          setScreen('home');
+        }
+      };
+
+      window.addEventListener('popstate', handlePopState);
+      return () => window.removeEventListener('popstate', handlePopState);
+    }
+  }, []);
+
+  const navigateTo = (newScreen: ScreenState) => {
+    setScreen(newScreen);
+    if (typeof window !== 'undefined') {
+      if (newScreen === 'about' && window.location.pathname !== '/about') {
+        window.history.pushState(null, '', '/about');
+      } else if (newScreen === 'home' && window.location.pathname !== '/') {
+        window.history.pushState(null, '', '/');
+      }
+    }
+  };
 
   // Register PWA Service Worker Blob for offline support
   useEffect(() => {
@@ -250,6 +282,7 @@ export default function App() {
           selectedMode={selectedGameMode}
           onOpenStats={() => setIsStatsOpen(true)}
           onOpenSettings={() => setIsSettingsOpen(true)}
+          onOpenAbout={() => navigateTo('about')}
           soundEnabled={settings.soundEnabled}
           onToggleSound={() => {
             const updated = { ...settings, soundEnabled: !settings.soundEnabled };
@@ -272,13 +305,17 @@ export default function App() {
         />
       )}
 
+      {screen === 'about' && (
+        <AboutScreen onBackToHome={() => navigateTo('home')} />
+      )}
+
       {screen === 'online_lobby' && (
         <OnlineLobbyScreen
           playerName={playerName}
           initialRoom={activeOnlineRoom}
           onBackToHome={() => {
             setActiveOnlineRoom(null);
-            setScreen('home');
+            navigateTo('home');
           }}
           onLeaveRoom={() => {
             setActiveOnlineRoom(null);
@@ -300,7 +337,7 @@ export default function App() {
           }}
           onBackToHome={() => {
             setActiveOnlineRoom(null);
-            setScreen('home');
+            navigateTo('home');
           }}
         />
       )}
@@ -310,7 +347,7 @@ export default function App() {
           continent={selectedContinent}
           gameMode={selectedGameMode}
           onStartGame={generateQuestions}
-          onBack={() => setScreen('home')}
+          onBack={() => navigateTo('home')}
         />
       )}
 
@@ -319,7 +356,7 @@ export default function App() {
           questions={questions}
           gameMode={selectedGameMode}
           onFinishGame={handleFinishGame}
-          onQuitGame={() => setScreen('home')}
+          onQuitGame={() => navigateTo('home')}
         />
       )}
 
@@ -333,7 +370,7 @@ export default function App() {
           continent={selectedContinent}
           newlyUnlocked={newlyUnlocked}
           onPlayAgain={() => generateQuestions('all')}
-          onGoHome={() => setScreen('home')}
+          onGoHome={() => navigateTo('home')}
         />
       )}
 
